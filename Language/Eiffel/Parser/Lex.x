@@ -292,8 +292,8 @@ data Token
 
 bsToText = Text.decodeUtf8 . BS.concat . BL.toChunks
 
-withPos :: (Text -> Token) -> AlexInput -> Int -> Alex Token
-withPos f (_pos, _last, str) i 
+withPos :: (Text -> Token) -> AlexInput -> Int64 -> Alex Token
+withPos f (_pos, _last, str, _numConsumedBytes) i 
   = return (f $ bsToText $ ByteString.take (fromIntegral i) str)
 
 bsHexToInteger bs = Integer $ Text.foldl' go 0 (Text.drop 2 bs)
@@ -328,7 +328,7 @@ alexGetChar input =
     Just (_, input') -> Just (alexInputPrevChar input', input')
     Nothing -> Nothing
 
-blockStringLex :: AlexInput -> Int -> Alex Token
+blockStringLex :: AlexInput -> Int64 -> Alex Token
 blockStringLex _ _ = do
   input <- alexGetInput
   go Text.empty LineStart input
@@ -497,8 +497,8 @@ keyword t = grabToken f >> return ()
           | t == t'   = Just Text.unpack
           | otherwise = Nothing
 
-ignorePendingBytes :: AlexInput -> AlexInput
-ignorePendingBytes p = p
+-- ignorePendingBytes :: AlexInput -> AlexInput
+-- ignorePendingBytes p = p
 
 alexInitUserState = "<nofile>"
 
@@ -508,7 +508,7 @@ alexEOF = return EOF
 runTokenizer file str = runAlex str $
   let loop ts = do 
         tok <- alexMonadScan
-        (AlexPn _ line col, _lastChar, _string) <- alexGetInput
+        (AlexPn _ line col, _lastChar, _string, _numBytesConsumed) <- alexGetInput
         case tok of
           EOF -> return (reverse ts)
           LexError -> error ("lexer error: " ++ show (newPos file line col))

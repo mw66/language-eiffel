@@ -1,4 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Language.Eiffel.Position 
     (Pos (..)
@@ -26,17 +27,23 @@ module Language.Eiffel.Position
 
 import Control.Monad
 
-import Data.DeriveTH
 import Data.Binary
+import           Data.Hashable
 import Control.DeepSeq
+
+import GHC.Generics
 
 import Text.Parsec
 import Text.Parsec.Pos
 import Text.Parsec.ByteString
 
-data Pos a = Pos SourcePos a deriving Ord
+data Pos a = Pos SourcePos a deriving (Ord, Generic, Generic1, NFData, NFData1, Binary, Hashable)
+instance Hashable SourcePos where
+    hashWithSalt salt a = hashWithSalt salt (sourceLine a, sourceColumn a, sourceName a)
+
 
 instance Eq a => Eq (Pos a) where
+    (==) :: Eq a => Pos a -> Pos a -> Bool
     (==) p1 p2 = contents p1 == contents p2
 
 instance Show a => Show (Pos a) where
@@ -82,9 +89,6 @@ instance Binary SourcePos where
             
 --     put p = put (sourceLine p, sourceColumn p, sourceName p)
 
-$( derive makeBinary ''Pos )
 
 instance NFData SourcePos where
     rnf p = sourceLine p `seq` sourceColumn p `seq` sourceName p `seq` ()
-
-$( derive makeNFData ''Pos )

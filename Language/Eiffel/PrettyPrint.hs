@@ -3,10 +3,10 @@ module Language.Eiffel.PrettyPrint where
 
 import           Control.Lens hiding (to, lens, from, assign, op)
 
-import           Data.Hashable
+import           Data.Hashable ()
 import qualified Data.HashMap.Strict as Map
 import qualified Data.Set as Set
-import           Data.Set (Set)
+import           Data.Set ()
 import qualified Data.Text as Text
 import           Data.Text (Text)
 
@@ -14,6 +14,8 @@ import           Text.PrettyPrint
 
 import           Language.Eiffel.Syntax
 import           Language.Eiffel.Position
+
+import Prelude hiding ((<>))
 
 ttext = text . Text.unpack
 
@@ -522,6 +524,3 @@ proc (Proc p) = ttext p
 proc Dot      = text "dot_proc"
 procM = maybe empty (angles . proc)
 sepDoc = text "separate"
-
-instance Hashable a => Hashable (Set a) where
-  hashWithSalt salt v = hashWithSalt salt (Set.toAscList v)

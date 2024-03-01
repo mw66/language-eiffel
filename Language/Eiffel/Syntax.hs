@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveAnyClass #-}
 module Language.Eiffel.Syntax where
 
 import           Control.DeepSeq
@@ -13,7 +14,6 @@ import           Data.HashMap.Strict (HashMap)
 import           Data.Set (Set)
 import qualified Data.Text.Encoding as Text
 import           Data.Text (Text)
-import           Data.DeriveTH
 import           Data.Binary
 
 import qualified GHC.Generics as G
@@ -45,31 +45,31 @@ data AbsClas body exp =
       converts   :: [ConvertClause],
       featureMap :: FeatureMap body exp,
       invnts     :: [Clause exp]
-    } deriving (Eq, Show)
+    } deriving (Eq, Show, G.Generic, Hashable)
 
 data FeatureMap body exp = 
   FeatureMap 
     { _fmRoutines :: !(Map Text (ExportedFeature (AbsRoutine body exp)))
     , _fmAttrs    :: Map Text (ExportedFeature (Attribute exp))
     , _fmConsts   :: Map Text (ExportedFeature (Constant exp))
-    } deriving (Show, Eq)
+    } deriving (Show, Eq, G.Generic, Hashable)
 
 data ExportedFeature feat = 
   ExportedFeature { _exportClass :: Set Text
                   , _exportFeat :: !feat
-                  } deriving (Eq, Ord, Show)
+                  } deriving (Eq, Ord, Show, G.Generic, Hashable)
 
 data SomeFeature body exp 
   = SomeRoutine (AbsRoutine body exp)
   | SomeAttr (Attribute exp)
   | SomeConst (Constant exp) 
-  deriving (Eq, Show, Ord)
+  deriving (Eq, Show, Ord, G.Generic, Hashable)
 
 data Inheritance
      = Inheritance
        { inheritNonConform :: Bool
        , inheritClauses :: [InheritClause]
-       } deriving (Show, Eq)
+       } deriving (Show, Eq, G.Generic, Hashable)
 
 data InheritClause 
     = InheritClause 
@@ -79,52 +79,52 @@ data InheritClause
       , undefine :: [Text]
       , redefine :: [Text]
       , select :: [Text]
-      } deriving (Show, Eq)
+      } deriving (Show, Eq, G.Generic, Hashable)
                  
 data RenameClause = 
   Rename { renameOrig :: Text
          , renameNew :: Text
          , renameAlias :: Maybe Text
-         } deriving (Show, Eq)
+         } deriving (Show, Eq, G.Generic, Hashable)
 
-data ExportList = ExportFeatureNames [Text] | ExportAll deriving (Show, Eq)
+data ExportList = ExportFeatureNames [Text] | ExportAll deriving (Show, Eq, G.Generic, Hashable)
          
 data ExportClause = 
   Export { exportTo :: [ClassName]
          , exportWhat :: ExportList
-         } deriving (Show, Eq)
+         } deriving (Show, Eq, G.Generic, Hashable)
 
 data Generic = 
   Generic { genericName :: ClassName 
           , genericConstType :: [Typ]
           , genericCreate :: Maybe [Text]
-          } deriving (Show, Eq)
+          } deriving (Show, Eq, G.Generic, Hashable)
 
 data CreateClause = 
   CreateClause { createExportNames :: [ClassName]
                , createNames :: [Text]
-               } deriving (Show, Eq)
+               } deriving (Show, Eq, G.Generic, Hashable)
 		 
 data ConvertClause = ConvertFrom Text [Typ]
-                   | ConvertTo Text [Typ] deriving (Show, Eq)
+                   | ConvertTo Text [Typ] deriving (Show, Eq, G.Generic, Hashable)
 
 data FeatureClause body exp =
   FeatureClause { exportNames :: [ClassName]
                 , routines :: [AbsRoutine body exp]
                 , attributes :: [Attribute exp]
                 , constants :: [Constant exp]
-                } deriving (Show, Eq)
+                } deriving (Show, Eq, G.Generic, Hashable)
 
 type RoutineI = AbsRoutine EmptyBody Expr
 type RoutineWithBody exp = AbsRoutine (RoutineBody exp) exp
 type Routine = RoutineWithBody Expr
 
-data EmptyBody = EmptyBody deriving (Show, Eq, Ord)
+data EmptyBody = EmptyBody deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 data Contract exp = 
   Contract { contractInherited :: Bool 
            , contractClauses :: [Clause exp]
-           } deriving (Show, Eq, Ord)
+           } deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 data AbsRoutine body exp = 
     AbsRoutine 
@@ -142,7 +142,7 @@ data AbsRoutine body exp =
     , routineEns    :: Contract exp
     , routineEnsLk  :: [Proc]
     , routineRescue :: Maybe [PosAbsStmt exp]
-    } deriving (Show, Eq, Ord)
+    } deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 data RoutineBody exp 
   = RoutineDefer
@@ -151,7 +151,7 @@ data RoutineBody exp
     { routineLocal :: [Decl]
     , routineLocalProcs :: [ProcDecl]
     , routineBody  :: PosAbsStmt exp
-    } deriving (Show, Eq, Ord)
+    } deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 data Attribute exp = 
   Attribute { attrFroz :: Bool 
@@ -160,13 +160,13 @@ data Attribute exp =
             , attrNotes :: [Note]
             , attrReq :: Contract exp
             , attrEns :: Contract exp
-            } deriving (Show, Eq, Ord)
+            } deriving (Show, Eq, Ord, G.Generic, Hashable)
   
 data Constant exp = 
   Constant { constFroz :: Bool  
            , constDecl :: Decl
            , constVal :: exp
-           } deriving (Show, Eq, Ord)
+           } deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 type Expr = Pos UnPosExpr 
 
@@ -185,7 +185,7 @@ data BinOp = Add
            | Implies
            | RelOp ROp Typ
            | SymbolOp Text
-             deriving (Show, Ord, Eq)
+             deriving (Show, Ord, Eq, G.Generic, Hashable)
 
 data ROp = Lte
          | Lt 
@@ -195,12 +195,12 @@ data ROp = Lte
          | TildeNeq
          | Gt 
          | Gte
-           deriving (Show, Ord, Eq)
+           deriving (Show, Ord, Eq, G.Generic, Hashable)
 
 data UnOp = Not
           | Neg
           | Old
-            deriving (Show, Ord, Eq)
+            deriving (Show, Ord, Eq, G.Generic, Hashable)
 
 data UnPosExpr =
     UnqualCall Text [Expr]
@@ -231,9 +231,9 @@ data UnPosExpr =
   | LitBool Bool
   | LitVoid
   | LitDouble Double 
-  | LitType Typ deriving (Ord, Eq)
+  | LitType Typ deriving (Ord, Eq, G.Generic, Hashable)
 
-data Quant = All | Some deriving (Eq, Ord, Show)
+data Quant = All | Some deriving (Eq, Ord, Show, G.Generic, Hashable)
 
 commaSepShow es = intercalate "," (map show es)
 argsShow args = "(" ++ commaSepShow args ++ ")"
@@ -345,9 +345,9 @@ data AbsStmt a = Assign a a
                | Debug Text (PosAbsStmt a)
                | Print a
                | PrintD a
-               | BuiltIn deriving (Ord, Eq)
+               | BuiltIn deriving (Ord, Eq, G.Generic, Hashable)
 
-data ElseIfPart a = ElseIfPart a (PosAbsStmt a) deriving (Show, Ord, Eq)
+data ElseIfPart a = ElseIfPart a (PosAbsStmt a) deriving (Show, Ord, Eq, G.Generic, Hashable)
 
 instance Show a => Show (AbsStmt a) where
     show (Block ss) = intercalate ";\n" . map show $ ss
@@ -387,112 +387,65 @@ showCase (l, s) = "when " ++ show l ++ " then\n" ++ show s
 showDefault Nothing = ""
 showDefault (Just s) = "else\n" ++ show s
 
-data ProcExpr = LessThan Proc Proc deriving (Show, Eq, Ord)
+data ProcExpr = LessThan Proc Proc deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 data ProcDecl = SubTop Proc
               | CreateLessThan Proc Proc 
-                deriving (Show, Eq, Ord)
+                deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 data Clause a = Clause 
     { clauseName :: Maybe Text
     , clauseExpr :: a
-    } deriving (Show, Ord, Eq)
+    } deriving (Show, Ord, Eq, G.Generic, Hashable)
 
 
 data Note = Note { noteTag :: Text
                  , noteContent :: [UnPosExpr]
-                 } deriving (Show, Eq, Ord)
-
-
-instance Binary Text where
-  put = put . Text.encodeUtf8
-  get = fmap Text.decodeUtf8 get
+                 } deriving (Show, Eq, Ord, G.Generic, Hashable)
 
 instance (Eq k, Hashable k, Binary k, Binary v) => 
          Binary (HashMap k v) where
   put = put . Map.toList
   get = fmap Map.fromList get
 
-$( derive makeBinary ''Typ )
-$( derive makeBinary ''UnPosExpr )
-$( derive makeBinary ''BinOp )
-$( derive makeBinary ''Quant )
-$( derive makeBinary ''Decl )
-$( derive makeBinary ''UnOp )
-$( derive makeBinary ''ROp )
+instance Binary Typ
+instance Binary UnPosExpr
+instance Binary BinOp
+instance Binary Quant
+instance Binary Decl
+instance Binary UnOp
+instance Binary ROp
 
-$( derive makeBinary ''AbsStmt )
-$( derive makeBinary ''ElseIfPart )
+instance Binary a => Binary (AbsStmt a)
+instance Binary a => Binary (ElseIfPart a)
 
-$( derive makeBinary ''ProcExpr )
+instance Binary ProcExpr
 
-$( derive makeBinary ''ExportList )
-$( derive makeBinary ''ExportClause )
-$( derive makeBinary ''RenameClause )
+instance Binary ExportList
+instance Binary ExportClause
+instance Binary RenameClause
 
-$( derive makeBinary ''Constant )
-$( derive makeBinary ''Attribute )
-$( derive makeBinary ''AbsRoutine )
-$( derive makeBinary ''EmptyBody )
+instance Binary a => Binary (Constant a)
+instance Binary a => Binary (Attribute a)
+instance (Binary a, Binary b) => Binary (AbsRoutine a b)
+instance Binary EmptyBody
 
-$( derive makeBinary ''Contract )
+instance Binary a => Binary (Contract a)
 
-$( derive makeBinary ''Proc )
-$( derive makeBinary ''ProcDecl )
-$( derive makeBinary ''Generic )
-$( derive makeBinary ''Clause )
-$( derive makeBinary ''FeatureClause )
-$( derive makeBinary ''ConvertClause )
-$( derive makeBinary ''CreateClause )
-$( derive makeBinary ''InheritClause )
-$( derive makeBinary ''Inheritance )
-$( derive makeBinary ''Note )
-$( derive makeBinary ''SomeFeature )
-$( derive makeBinary ''FeatureMap )
-$( derive makeBinary ''ExportedFeature )
-$( derive makeBinary ''AbsClas )
-
-
-$( derive makeNFData ''Typ )
-$( derive makeNFData ''UnPosExpr )
-$( derive makeNFData ''BinOp )
-$( derive makeNFData ''Quant )
-$( derive makeNFData ''Decl )
-$( derive makeNFData ''UnOp )
-$( derive makeNFData ''ROp )
-
-$( derive makeNFData ''AbsStmt )
-$( derive makeNFData ''ElseIfPart )
-
-$( derive makeNFData ''ProcExpr )
-
-$( derive makeNFData ''ExportList )
-$( derive makeNFData ''ExportClause )
-$( derive makeNFData ''RenameClause )
-
-$( derive makeNFData ''Constant )
-$( derive makeNFData ''Attribute )
-$( derive makeNFData ''AbsRoutine )
-$( derive makeNFData ''RoutineBody )
-$( derive makeNFData ''EmptyBody )
-
-$( derive makeNFData ''Contract )
-
-$( derive makeNFData ''Proc )
-$( derive makeNFData ''ProcDecl )
-$( derive makeNFData ''Generic )
-$( derive makeNFData ''Clause )
-$( derive makeNFData ''FeatureClause )
-$( derive makeNFData ''ConvertClause )
-$( derive makeNFData ''CreateClause )
-$( derive makeNFData ''InheritClause )
-$( derive makeNFData ''Inheritance )
-$( derive makeNFData ''Note )
-$( derive makeNFData ''SomeFeature )
-$( derive makeNFData ''ExportedFeature )
-$( derive makeNFData ''FeatureMap )
-$( derive makeNFData ''AbsClas )
-
+instance Binary Proc
+instance Binary ProcDecl
+instance Binary Generic
+instance Binary a => Binary (Clause a)
+instance (Binary a, Binary b) => Binary (FeatureClause a b)
+instance Binary ConvertClause
+instance Binary CreateClause
+instance Binary InheritClause
+instance Binary Inheritance
+instance Binary Note
+instance (Binary a, Binary b)=> Binary (SomeFeature a b)
+instance (Binary a, Binary b)=> Binary (FeatureMap a b)
+instance Binary a => Binary (ExportedFeature a)
+instance (Binary a, Binary b) => Binary (AbsClas a b)
 
 makeLenses ''ExportedFeature
 makeLenses ''FeatureMap

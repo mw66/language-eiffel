@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -117,7 +118,7 @@ instance Feature (Constant expr) expr where
     constant {constDecl = renameDecl r (constDecl constant)}
 
 -- | A way to extract each type of feature from a class.
-class Feature a expr => ClassFeature a body expr | a -> expr, a -> body where
+class Feature a expr => ClassFeature a body expr where
   -- | A list of all this class' features of the given type.
   allFeatures :: AbsClas body expr -> [a]
   
@@ -163,9 +164,11 @@ allAttributes = allHelper fmAttrs
 allRoutines = allHelper fmRoutines
 
 -- | Fetch contants from all feature clauses.
+allConstants :: AbsClas body exp -> [Constant exp]
 allConstants = allHelper fmConsts
 
 -- Help for above 'all' functions
+allHelper :: (Lens' (FeatureMap body exp) (Map Text (ExportedFeature b))) -> AbsClas body exp -> [b]
 allHelper lens = 
   map (view exportFeat) . Map.elems . view lens . featureMap
 
@@ -189,6 +192,7 @@ isCreateName n c = n `elem` allCreates c
 
 -- * 'SomeFeature' predicates, extractors.
 
+toRoutineMb :: SomeFeature body exp -> Maybe (AbsRoutine body exp)
 toRoutineMb (SomeRoutine r) = Just r
 toRoutineMb _ = Nothing
 
@@ -569,6 +573,7 @@ fmUnion fm1 fm2 =
 
 fmEmpty = FeatureMap Map.empty Map.empty Map.empty
 
+fmUnions :: [FeatureMap body exp] -> FeatureMap body exp
 fmUnions = foldr fmUnion fmEmpty
 
 -- * Routine level utilities

@@ -9,3 +9,6 @@
 *.p_o
 *.p_o-boot
 *.p_hi-boot
+.idea
+dist-newstyle
+.vscode
